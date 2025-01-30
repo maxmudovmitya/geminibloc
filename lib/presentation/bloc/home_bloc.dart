@@ -1,5 +1,5 @@
 import 'package:bloc/bloc.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:ngdemo23/data/%20repositories/gemini_talk_repository_impl.dart';
 import 'package:ngdemo23/domain/usecases/gemini_text_only_usecase.dart';
 import 'package:ngdemo23/presentation/bloc/home_event.dart';
@@ -10,10 +10,10 @@ import '../../data/models/message_model.dart';
 import '../../domain/usecases/gemini_text_and_image_usecase.dart';
 
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
-  GeminiTextOnlyUseCase textOnlyUseCase = GeminiTextOnlyUseCase(GeminiTalkRepositoryImpl());
-
-  // class HomeBloc extends Bloc<HomeEvent, HomeState> {
-  // GeminiTextOnlyUseCase textOnlyUseCase = GeminiTextAndImageUseCase(GeminiTalkRepositoryImpl());
+  GeminiTextOnlyUseCase textOnlyUseCase = GeminiTextOnlyUseCase(
+      GeminiTalkRepositoryImpl());
+  GeminiTextAndImageUseCase textAndImageUseCase = GeminiTextAndImageUseCase(
+      GeminiTalkRepositoryImpl());
 
   TextEditingController textEditingController = TextEditingController();
   List<MessageModel> messages = [];
@@ -23,12 +23,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<HomeTextAndImageEvent>(_onHomeTextAndImageEvent);
   }
 
-  Future<void> _onHomeTextOnlyEvent(
-      HomeTextOnlyEvent event, Emitter<HomeState> emit) async {
+  Future<void> _onHomeTextOnlyEvent(HomeTextOnlyEvent event,
+      Emitter<HomeState> emit) async {
     emit(HomeLoadingState());
 
     var either = await textOnlyUseCase.call(event.message);
-
     either.fold((l) {
       LogService.e(l);
       MessageModel gemini = MessageModel(isMine: false, message: l);
@@ -43,12 +42,22 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     });
   }
 
+  Future<void> _onHomeTextAndImageEvent(HomeTextAndImageEvent event,
+      Emitter<HomeState> emit) async {}
 
 
-  Future<void> _onHomeTextAndImageEvent(
-    HomeTextOnlyEvent event, Emitter<HomeState> emit) async {}
-}
+  updateMessages(MessageModel messageModel) {
+    messages.add(messageModel);
+  }
 
-updateMessages(  MessageModel messageModel){
+  void askToGemini() {
+    String message = textEditingController.text.toString().trim();
 
+    MessageModel mine = MessageModel(isMine: true, message: message);
+    updateMessages(mine);
+
+    add(HomeTextOnlyEvent(message: message));
+
+    textEditingController.clear();
+  }
 }
